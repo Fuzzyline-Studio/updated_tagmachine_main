@@ -117,9 +117,14 @@ void PlayerLockTimerFunc(){
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "lock");
             Serial.println("DOOR LOCK!");
             // Mp3PlayLargeFolder(1, VD4);  // [DFPlayer 비활성화]
-            has2wifi.ReceiveMine();
             ReturnNormalState();
+            ClearPendingDeviceState();
             RoundNeoEffect(GREEN);
+            // 자기 자신이 보낸 lock 을 ReceiveMine()으로만 읽으면 cur 이 activate 로 남아
+            // 다음 해제의 재확인에서 낡은 "lock" 이 큐에 들어간다. loginDone 이 풀린 뒤
+            // DataChanged()까지 거쳐 cur/strCurState 를 lock 으로 맞춘다.
+            has2wifi.ReceiveMine();
+            DataChanged();
             SubSerialFlush();
             MainSerialFlush();
         }                                                     //시리얼 통신 버퍼 flush
@@ -148,6 +153,7 @@ void PlayerUnlockTimerFunc(){
             Serial.println("DOOR UNLOCK!");
             // Mp3PlayLargeFolder(1, VD7);  // [DFPlayer 비활성화]
             ReturnNormalState();
+            ClearPendingDeviceState();
             digitalWrite(RELAY_PIN, HIGH);
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "open");
             RoundNeoEffect(YELLOW);
@@ -183,6 +189,7 @@ void TaggerUnlockTimerFunc(){
             // Mp3PlayLargeFolder(1, VD1);  // [DFPlayer 비활성화]
             Serial.println("DOOR UNLOCK!");
             ReturnNormalState();
+            ClearPendingDeviceState();
             digitalWrite(RELAY_PIN, HIGH);
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "open");
             RoundNeoEffect(PURPLE);
@@ -214,6 +221,7 @@ void GhostUnlockTimerFunc(){
             // Mp3PlayLargeFolder(1, VD1);  // [DFPlayer 비활성화]
             Serial.println("GHOST OPEN");
             ReturnNormalState();
+            ClearPendingDeviceState();
             digitalWrite(RELAY_PIN, HIGH);
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "open");
             RoundNeoEffect(BLUE);
@@ -253,6 +261,7 @@ void NewbieTaggerUnlockTimerFunc(){
             // Mp3PlayLargeFolder(1, VD1);  // [DFPlayer 비활성화]
             Serial.println("DOOR UNLOCK (Newbie)!");
             ReturnNormalState();
+            ClearPendingDeviceState();
             ptrRfidMode = NewbieLogin;
             digitalWrite(RELAY_PIN, HIGH);
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "open");
@@ -290,6 +299,7 @@ void GhostLockTimerFunc(){
             // Mp3PlayLargeFolder(1, VD1);  // [DFPlayer 비활성화]
             Serial.println("GHOST OPEN");
             ReturnNormalState();
+            ClearPendingDeviceState();
             digitalWrite(RELAY_PIN, HIGH);
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "open");
             RoundNeoEffect(BLUE);

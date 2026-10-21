@@ -36,6 +36,7 @@ void DataChanged();
 void ApplyDeviceState(String deviceState);
 void QueuePendingDeviceState(String deviceState);
 void ApplyPendingDeviceState();
+void ClearPendingDeviceState();
 void SettingFunc(void);
 void ActivateFunc(void);
 void ReadyFunc(void);
