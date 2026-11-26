@@ -1,5 +1,6 @@
 #include <BlackBoxWifi.h>
 #include <esp_heap_caps.h>
+#include <esp_partition.h>
 
 // 태그머신 블랙박스: 태그/로그인/개폐 흐름, 서버 상태 전환, Wi-Fi 이벤트, 서버 폴링 지연,
 // 메모리를 flash 링에 남기고 게임(game_state=activate) 밖에서만 MQTT로 수집 PC에 올린다.
@@ -7,6 +8,10 @@
 
 extern bool dfPlayerReady; // dfplayer.ino
 static bool bb_ota_hold = false;
+// spiffs 정리 결과: 0 필요 없음, 2 실패, 3 이미 시도함(다시 안 함).
+static uint8_t bb_claim_result = 0;
+static const uint32_t BB_CLAIM_MAGIC = 0x42424331;
+RTC_NOINIT_ATTR static uint32_t bb_claim_marker;
 static uint32_t bb_forced_outputs = 0;
 static uint32_t bb_http_count = 0, bb_http_max_ms = 0, bb_http_total_ms = 0, bb_http_slow = 0;
 
@@ -139,21 +144,81 @@ void BlackBoxOtaCheck()
   BlackBoxTag("ota.github.returned", ESP.getFreeHeap(), (int32_t)(millis() - started), 0, 0);
 }
 
-int BlackBoxDiagnosticsText(char *out, size_t cap)
+// 텔넷 콘솔은 긴 줄(약 64바이트 초과)을 내보내지 못한다. 한 줄을 짧게 나눠 찍는다.
+void BlackBoxDiagnosticsPrint()
 {
   const has1blackbox::Diagnostics d = has1blackbox::blackbox.diagnostics();
-  return snprintf(out, cap,
-                  "[diagnostics] fw=%d heap=%lu heap_min=%lu heap_block=%lu"
-                  " bb_ready=%u bb_status=%u bb_partition=%lu bb_flash_errors=%lu bb_uploaded=%lu"
-                  " bb_upload_failures=%lu bb_dropped=%lu bb_forced_outputs=%lu",
-                  FIRMWARE_VER, static_cast<unsigned long>(ESP.getFreeHeap()),
-                  static_cast<unsigned long>(ESP.getMinFreeHeap()),
-                  static_cast<unsigned long>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)),
-                  d.ready ? 1u : 0u, static_cast<unsigned>(d.ringStatus),
-                  static_cast<unsigned long>(d.partitionSize),
-                  static_cast<unsigned long>(d.flashErrors), static_cast<unsigned long>(d.uploaded),
-                  static_cast<unsigned long>(d.uploadFailures), static_cast<unsigned long>(d.dropped),
-                  static_cast<unsigned long>(bb_forced_outputs));
+  char line[60];
+  snprintf(line, sizeof(line), "[bb] fw=%d heap=%lu min=%lu block=%lu", FIRMWARE_VER,
+           static_cast<unsigned long>(ESP.getFreeHeap()),
+           static_cast<unsigned long>(ESP.getMinFreeHeap()),
+           static_cast<unsigned long>(heap_caps_get_largest_free_block(MALLOC_CAP_8BIT)));
+  DebugSerial.println(line);
+  snprintf(line, sizeof(line), "[bb] ready=%u status=%u part=%lu claim=%u", d.ready ? 1u : 0u,
+           static_cast<unsigned>(d.ringStatus), static_cast<unsigned long>(d.partitionSize),
+           static_cast<unsigned>(bb_claim_result));
+  DebugSerial.println(line);
+  snprintf(line, sizeof(line), "[bb] flash_err=%lu up=%lu up_fail=%lu drop=%lu",
+           static_cast<unsigned long>(d.flashErrors), static_cast<unsigned long>(d.uploaded),
+           static_cast<unsigned long>(d.uploadFailures), static_cast<unsigned long>(d.dropped));
+  DebugSerial.println(line);
+  snprintf(line, sizeof(line), "[bb] accepted=%lu persisted=%lu forced=%lu",
+           static_cast<unsigned long>(d.accepted), static_cast<unsigned long>(d.persisted),
+           static_cast<unsigned long>(bb_forced_outputs));
+  DebugSerial.println(line);
+}
+
+// 이 펌웨어는 spiffs 파티션을 쓰지 않는다(설정은 NVS). 그런데 예전에 다른 파티션 표로 구운
+// 적이 있는 장치는 그 자리에 옛 앱 이미지 조각 같은 내용이 남아 있어, 라이브러리가 "모르는
+// 내용"(status 5)으로 보고 기록을 끈다. 그 경우에만 파티션을 한 번 지우고 재시작한다.
+// 유효한 링이 있으면 status가 5가 아니므로 기록을 지우는 일은 없다. RTC 표식으로 전원이
+// 들어와 있는 동안 한 번만 시도해 재시작이 반복되지 않게 한다.
+void BlackBoxClaimSpiffs()
+{
+  if (TAGMACHINE_BLACKBOX_ENABLED == 0) return;
+  const uint32_t started = millis();
+  while (has1blackbox::blackbox.diagnostics().ringStatus == 0 &&
+         uint32_t(millis() - started) < 5000)
+    delay(10);
+  const uint8_t status = has1blackbox::blackbox.diagnostics().ringStatus;
+  if (status == 1) bb_claim_marker = 0;
+  if (status != 5) return;
+  if (bb_claim_marker == BB_CLAIM_MAGIC)
+  {
+    bb_claim_result = 3; // 이미 한 번 지웠는데도 그대로다. 다시 하지 않는다.
+    return;
+  }
+  const esp_partition_t *partition = esp_partition_find_first(
+      ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, "spiffs");
+  if (!partition || partition->size % 4096 != 0)
+  {
+    bb_claim_result = 2;
+    return;
+  }
+  // writer의 재시도(ring.begin)와 겹치지 않게 같은 가드를 잡고 지운다.
+  if (!has1blackbox::blackbox.tryBeginLedOutput())
+  {
+    bb_claim_result = 2;
+    return;
+  }
+  DebugSerial.println("[bb] spiffs holds leftovers; erasing once");
+  bool ok = true;
+  for (size_t offset = 0; ok && offset < partition->size; offset += 4096)
+  {
+    ok = esp_partition_erase_range(partition, offset, 4096) == ESP_OK;
+    delay(1); // 다른 태스크와 워치독에 양보
+  }
+  has1blackbox::blackbox.endLedOutput();
+  if (!ok)
+  {
+    bb_claim_result = 2;
+    DebugSerial.println("[bb] spiffs erase failed");
+    return;
+  }
+  bb_claim_marker = BB_CLAIM_MAGIC;
+  DebugSerial.println("[bb] spiffs erased; restarting");
+  delay(200);
+  ESP.restart();
 }
 
 //**************************************** 출력 가드 ****************************************

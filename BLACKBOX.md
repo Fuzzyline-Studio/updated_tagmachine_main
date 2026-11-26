@@ -89,10 +89,22 @@ arduino-cli compile -b esp32:esp32:ttgo-t1:PartitionScheme=default \
 
 ## 확인
 
-텔넷(23번) 접속 직후 한 줄이 나온다: `[diagnostics] fw=… heap=… bb_ready`(0/1),
-`bb_status`(1 = 정상, 2 = 파티션 크기 거부, 5 = 모르는 내용이 있어 손대지 않음),
-`bb_partition`(spiffs 바이트), `bb_flash_errors`, `bb_uploaded`, `bb_upload_failures`,
-`bb_dropped`, `bb_forced_outputs`.
+텔넷(23번) 접속 직후 짧은 줄 네 개가 나온다(이 콘솔은 약 64바이트가 넘는 줄을 내보내지 못한다).
+
+```
+[bb] fw=8 heap=… min=… block=…
+[bb] ready=1 status=1 part=1507328 claim=0
+[bb] flash_err=0 up=… up_fail=0 drop=0
+[bb] accepted=… persisted=… forced=0
+```
+
+`status`는 1 = 정상, 2 = 파티션 크기 거부, 5 = 모르는 내용이 있어 손대지 않음. `up`은 수집 PC가
+ACK한 업로드 수다.
+
+`spiffs`에 옛 내용이 남아 `status`가 5로 나오면(다른 파티션 표로 구운 적이 있는 장치), 펌웨어가
+부팅 때 `spiffs` 전체를 한 번 지우고 재시작한다(약 15~20초). 이 펌웨어는 `spiffs`를 쓰지 않으므로
+잃는 것이 없고, 유효한 링이 있으면 지우지 않는다. `claim`은 0 = 필요 없음, 2 = 실패, 3 = 한 번
+지웠는데도 그대로라 다시 하지 않음.
 
 배포 뒤 대기 상태의 한 대가 수집 PC SQLite에 저장되는지, `memory.main`의 heap 여유, LED 깨짐과
 효과음 누락 여부를 먼저 확인한다.

@@ -17,7 +17,10 @@ void BlackBoxState(int32_t kind, const char *state);
 void BlackBoxHttp(uint32_t startedMs);
 // GitHub OTA: 업로드를 닫고 flash 기록을 멈춘 뒤 ota.check()를 돌린다.
 void BlackBoxOtaCheck();
-int BlackBoxDiagnosticsText(char *out, size_t cap);
+// 텔넷/시리얼에 짧은 줄 여러 개로 상태를 찍는다.
+void BlackBoxDiagnosticsPrint();
+// spiffs에 옛 내용이 남아 기록이 꺼졌을 때만 한 번 지우고 재시작한다.
+void BlackBoxClaimSpiffs();
 
 // 블랙박스 flash 쓰기와 겹치면 깨지는 출력(네오픽셀, DFPlayer 소프트웨어 시리얼)용 가드.
 // waitMs 동안 기다려도 못 잡으면 false를 돌려주고, 호출자는 그대로 출력한다.
