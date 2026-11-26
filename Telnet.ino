@@ -60,6 +60,12 @@ void TelnetRun() {
     telnetClient = newClient;
     telnetClient.setNoDelay(true);
     DebugSerial.println("Telnet client connected");
+    {
+      // 블랙박스 상태(BLACKBOX.md): USB 없이도 기록/업로드가 되는지 확인한다.
+      static char diagnostics[320];
+      BlackBoxDiagnosticsText(diagnostics, sizeof(diagnostics));
+      DebugSerial.println(diagnostics);
+    }
   }
 
   if (telnetClient && !telnetClient.connected()) {

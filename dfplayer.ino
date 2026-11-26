@@ -23,6 +23,14 @@ void Mp3_Setup(){
 }//void MP3_SETUP
 
 
+// 소프트웨어 시리얼 전송이 블랙박스 flash 쓰기와 겹치지 않게 가드를 잡고 보낸다.
+void Mp3SendPlay(uint8_t folder_number, uint16_t file_number)
+{
+  const bool held = BlackBoxQuietBegin(500);
+  myDFPlayer.playLargeFolder(folder_number, file_number);
+  BlackBoxQuietEnd(held);
+}
+
 void Mp3PlayLargeFolder(uint8_t folder_number, uint16_t file_number)
 {
   if(!dfPlayerReady) return;  // DFPlayer 미초기화 시 스킵
@@ -34,14 +42,14 @@ void Mp3PlayLargeFolder(uint8_t folder_number, uint16_t file_number)
   }
   if (myDFPlayer.available())
   {
-    myDFPlayer.playLargeFolder(folder_number, file_number);
+    Mp3SendPlay(folder_number, file_number);
     play_error_count = 0;
   }
   else
   {
     if (play_error_count < 3)
     {
-      myDFPlayer.playLargeFolder(folder_number, file_number);
+      Mp3SendPlay(folder_number, file_number);
       play_error_count++;
       DebugSerial.print("Error count: ");
       DebugSerial.println(play_error_count);
@@ -51,6 +59,7 @@ void Mp3PlayLargeFolder(uint8_t folder_number, uint16_t file_number)
       if (!(send_mp3_err))
       {
         send_mp3_err = true;
+        BlackBoxTag("tm.mp3.err", 0, 0, 0, 0);
         has2wifi.Send((String)(const char *)my["device_name"], "device_state", "MP3");
       }
     }

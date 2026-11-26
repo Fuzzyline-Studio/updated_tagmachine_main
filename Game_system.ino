@@ -26,6 +26,7 @@ void GhostDoorOpen(){
 
 void ServerDoorOpen() {
     DebugSerial.println("SERVER DOOR OPEN");
+    BlackBoxTag("tm.open.server", 0, 0, 0, 0);
     ReturnNormalState();
     pendingDeviceState = "";
     pendingDeviceStateApply = false;
@@ -105,6 +106,7 @@ void NewbiePlayerUnlockTimerFunc() {
             CancelTagProgress();
         } else {
             DebugSerial.println("DOOR UNLOCK (Newbie Player)!");
+            BlackBoxTag("tm.open", 11, 0, 0, 0);
             Mp3PlayLargeFolder(1, VD7);
             NewbiePlayerOpen();
         }
@@ -122,6 +124,7 @@ void NewbieGhostUnlockTimerFunc() {
             CancelTagProgress();
         } else {
             DebugSerial.println("GHOST OPEN (Newbie)!");
+            BlackBoxTag("tm.open", 13, 0, 0, 0);
             Mp3PlayLargeFolder(1, VD1);
             NewbieGhostOpen();
         }
