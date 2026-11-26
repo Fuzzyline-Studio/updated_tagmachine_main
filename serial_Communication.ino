@@ -7,12 +7,10 @@ void CommnunicationBeetle(){
 
     if(command[0] == 'W'){
       DebugSerial.println("Beetle Init Success");
-      BlackBoxTag("tm.beetle.init", 0, 0, 0, 0);
       toSubSerial.println("W");
     }
     else if(command[0] == 'R'){
       DebugSerial.println("Beetle Reset Success");
-      BlackBoxTag("tm.beetle.reset", 0, 0, 0, 0);
     }
     else if(command[0] == 'M'){
       digitalWrite(RELAY_PIN, HIGH);
@@ -57,12 +55,10 @@ void CommnunicationMainBeetle(){
 
     if(command[0] == 'W'){
       DebugSerial.println("Main Beetle Init Success");
-      BlackBoxTag("tm.beetle.init", 1, 0, 0, 0);
       toMainSerial.println("W");
     }
     else if(command[0] == 'R'){
       DebugSerial.println("Main Beetle Reset Success");
-      BlackBoxTag("tm.beetle.reset", 1, 0, 0, 0);
     }
     else if(command[0] == 'M'){
       digitalWrite(RELAY_PIN, HIGH);

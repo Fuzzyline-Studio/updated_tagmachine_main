@@ -9,7 +9,7 @@
  *
  */
 
-#define FIRMWARE_VER 9
+#define FIRMWARE_VER 6
 #define PARTITION_VER 1
 #include "updated_tagmachine_main.h"
 
@@ -20,9 +20,6 @@ void setup() {
     NeopixelInit();
     TimerInit();
     Mp3_Setup();
-    // DFPlayer 초기화(소프트웨어 시리얼)가 끝난 뒤, Wi-Fi 초기화(막힐 수 있음)보다 먼저 기록을 시작한다.
-    BlackBoxBegin();
-    BlackBoxClaimSpiffs();
     pinMode(RELAY_PIN, OUTPUT);
 //  has2wifi.Setup("city");
     has2wifi.Setup("badland");
@@ -72,5 +69,4 @@ void loop() {
     if (ptrCurrentMode != nullptr) ptrCurrentMode();
     TimerRun();
     TelnetRun();
-    BlackBoxLoop();
 }

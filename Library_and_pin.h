@@ -12,23 +12,6 @@
 #include <SecureOTA.h>
 #include "secrets.h"
 
-// 별도 블랙박스 라이브러리(HAS1BlackBox, New_HAS1 저장소). broker URI가 비어 있으면 flash에만 남긴다.
-// 3호점 수집 PC의 Mosquitto는 익명 허용이라 암호가 비어 있어도 된다. 사용자 이름이 비어 있으면
-// 장치 STA MAC(대문자 12자리)을 쓴다. 값을 바꾸려면 secrets.h에서 먼저 정의한다.
-#ifndef TAGMACHINE_BLACKBOX_ENABLED
-#define TAGMACHINE_BLACKBOX_ENABLED 1
-#endif
-#ifndef TAGMACHINE_BLACKBOX_BROKER_URI
-#define TAGMACHINE_BLACKBOX_BROKER_URI "mqtt://172.30.1.43:1883"
-#endif
-#ifndef TAGMACHINE_BLACKBOX_MQTT_USERNAME
-#define TAGMACHINE_BLACKBOX_MQTT_USERNAME ""
-#endif
-#ifndef TAGMACHINE_BLACKBOX_MQTT_PASSWORD
-#define TAGMACHINE_BLACKBOX_MQTT_PASSWORD ""
-#endif
-#include "blackbox.h"
-
 #define DFPLAYER_RX_PIN 39
 #define DFPLAYER_TX_PIN 33
 #define SUB_BEETLE_RX_PIN 19

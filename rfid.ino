@@ -10,13 +10,7 @@ void CheckingPlayers(String tagUser) // 어떤 카드가 들어왔는지 확인�
   } else {
     if (loginDone == false) // 로그인할때만 체크함
     {
-      const uint32_t fetchStarted = millis();
       has2wifi.Receive(tagUser); // 2. 술래인지, 플레이어인지 구분
-      {
-        const char *tagRole = (const char *)tag["role"];
-        BlackBoxTag("tm.tag.fetch", (int32_t)(millis() - fetchStarted),
-                    tagRole && tagRole[0] ? tagRole[0] : 0, mainRfidTagged, 0);
-      }
       if ((String)(const char *)tag["role"] ==
           "player") { // 3. 태그한 사용자가 플레이어고
         DebugSerial.println("Player Tagged");
@@ -41,7 +35,6 @@ void CheckingPlayers(String tagUser) // 어떤 카드가 들어왔는지 확인�
         if (ptrRfidMode != nullptr) ptrRfidMode(loginRole);
       } else {
         DebugSerial.println("Different TAG deteced");
-        BlackBoxTag("tm.tag.diff", mainRfidTagged, 0, 0, 0);
         if (ptrRfidFail != nullptr) ptrRfidFail();
       }
     }
@@ -51,7 +44,6 @@ void CheckingPlayers(String tagUser) // 어떤 카드가 들어왔는지 확인�
 
 void Login(char role) {
   DebugSerial.println("LOGIN");
-  BlackBoxTag("tm.login", role, mainRfidTagged, 0, 0);
   loginDone = true;
   lightColor(pixels[ROUND], color[BLACK]);
   lightColor(pixels[ROUND_SUB], color[BLACK]);
@@ -158,7 +150,6 @@ void NewbieTaggerFail() {
   } else {
     Mp3PlayLargeFolder(1, VD6);
     DebugSerial.println("Unlock Fail Door Shut");
-    BlackBoxTag("tm.fail", 12, 0, 0, 0);
     NeoBlink(ROUND, RED, 5, 500);
     AllNeoOn(GREEN);
     ReturnNormalState();
@@ -175,7 +166,6 @@ void LockFail() {
   } else {
     Mp3PlayLargeFolder(1, VD1);
     DebugSerial.println("Lock Fail Door Open");
-    BlackBoxTag("tm.fail", 1, 0, 0, 0);
     digitalWrite(RELAY_PIN, HIGH);
     has2wifi.Send((String)(const char *)my["device_name"], "device_state",
                   "open");
@@ -195,7 +185,6 @@ void UnlockFail() {
   } else {
     Mp3PlayLargeFolder(1, VD6);
     DebugSerial.println("Unlock Fail Door Shut");
-    BlackBoxTag("tm.fail", 2, 0, 0, 0);
     NeoBlink(ROUND, RED, 5, 500);
     AllNeoOn(GREEN);
     ReturnNormalState();
@@ -212,7 +201,6 @@ void GhostOpenFailUnlock() {
   // else{
   Mp3PlayLargeFolder(1, VD6);
   DebugSerial.println("Ghost Door OpenFail");
-  BlackBoxTag("tm.fail", 3, 0, 0, 0);
   NeoBlink(ROUND, RED, 5, 500);
   AllNeoOn(YELLOW);
   ReturnNormalState();
@@ -228,7 +216,6 @@ void GhostOpenFailLock() {
   // else{
   Mp3PlayLargeFolder(1, VD6);
   DebugSerial.println("Unlock Fail Door Shut");
-  BlackBoxTag("tm.fail", 4, 0, 0, 0);
   NeoBlink(ROUND, RED, 5, 500);
   AllNeoOn(GREEN);
   ReturnNormalState();

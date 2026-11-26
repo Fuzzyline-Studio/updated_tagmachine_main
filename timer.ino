@@ -19,9 +19,7 @@ void TimerRun(){
  * @brief WIFI read 타이머 주기별로 받는 함수
  */
 void WifiIntervalFunc(){
-    const uint32_t pollStarted = millis();
     has2wifi.Loop(DataChanged);
-    BlackBoxHttp(pollStarted);
     CommnunicationBeetle();         // Sub Beetle
     CommnunicationMainBeetle();     // Main Beetle
 }
@@ -49,7 +47,6 @@ void SubSerialTimerFunc(){
 void DebuffTimerFunc(){
     DebuffTimer.deleteTimer(debuffTimerId);
     DebugSerial.println("debuff time end");
-    BlackBoxTag("tm.debuff.end", 0, 0, 0, 0);
     has2wifi.Send((String)(const char*)my["device_name"], "device_state", "activate");
     ReturnNormalState();
 }
@@ -69,7 +66,6 @@ void CancelTagProgress(){
     SubSerialFlush();
     MainSerialFlush();
     DebugSerial.println("Cancel Tag Progress");
-    BlackBoxTag("tm.cancel", 0, 0, 0, 0);
     ApplyPendingDeviceState();
 }
 
@@ -117,7 +113,6 @@ void PlayerLockTimerFunc(){
             DebugSerial.println("debuff off");
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "lock");
             DebugSerial.println("DOOR LOCK!");
-            BlackBoxTag("tm.lock.done", 0, 0, 0, 0);
             Mp3PlayLargeFolder(1, VD4);
             has2wifi.ReceiveMine();
             ReturnNormalState();
@@ -148,7 +143,6 @@ void PlayerUnlockTimerFunc(){
         }
         else {
             DebugSerial.println("DOOR UNLOCK!");
-            BlackBoxTag("tm.open", 1, 0, 0, 0);
             Mp3PlayLargeFolder(1, VD7);
             ReturnNormalState();
             digitalWrite(RELAY_PIN, HIGH);
@@ -184,7 +178,6 @@ void TaggerUnlockTimerFunc(){
         else {
             Mp3PlayLargeFolder(1, VD1);
             DebugSerial.println("DOOR UNLOCK!");
-            BlackBoxTag("tm.open", 2, 0, 0, 0);
             ReturnNormalState();
             digitalWrite(RELAY_PIN, HIGH); 
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "open");
@@ -216,7 +209,6 @@ void GhostUnlockTimerFunc(){
         else{
             Mp3PlayLargeFolder(1, VD1);
             DebugSerial.println("GHOST OPEN");
-            BlackBoxTag("tm.open", 3, 0, 0, 0);
             ReturnNormalState();
             digitalWrite(RELAY_PIN, HIGH);
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "open");
@@ -254,7 +246,6 @@ void NewbieTaggerUnlockTimerFunc(){
         else {
             Mp3PlayLargeFolder(1, VD1);
             DebugSerial.println("DOOR UNLOCK (Newbie)!");
-            BlackBoxTag("tm.open", 12, 0, 0, 0);
             ReturnNormalState();
             ptrRfidMode = NewbieLogin;
             digitalWrite(RELAY_PIN, HIGH);
@@ -291,7 +282,6 @@ void GhostLockTimerFunc(){
         else {
             Mp3PlayLargeFolder(1, VD1);
             DebugSerial.println("GHOST OPEN");
-            BlackBoxTag("tm.open", 4, 0, 0, 0);
             ReturnNormalState();
             digitalWrite(RELAY_PIN, HIGH);
             has2wifi.Send((String)(const char*)my["device_name"], "device_state", "open");

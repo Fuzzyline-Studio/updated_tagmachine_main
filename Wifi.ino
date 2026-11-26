@@ -9,7 +9,6 @@ void DataChanged()
     UpdateBrightness();
   }
   if((String)(const char*)my["game_state"] != (String)(const char*)cur["game_state"]){
-    BlackBoxState(0, (const char*)my["game_state"]);
     if((String)(const char*)my["game_state"] == "setting"){
         strCurState = "setting";
         SettingFunc();
@@ -25,7 +24,6 @@ void DataChanged()
   }
   if((String)(const char*)my["device_state"] != (String)(const char*)cur["device_state"]){
     String deviceState = (String)(const char*)my["device_state"];
-    BlackBoxState(1, deviceState.c_str());
     DebugSerial.println("[DC] device_state changed: " + (String)(const char*)cur["device_state"] + " -> " + deviceState);
     if(deviceState == "lock"){
       strCurState = deviceState;
@@ -47,7 +45,7 @@ void DataChanged()
         ServerDoorOpen();
     }
     else if(deviceState == "github"){
-        BlackBoxOtaCheck();
+        ota.check();
     }
   }
   if((String)(const char*)my["device_state"] == "debuff"){ 
